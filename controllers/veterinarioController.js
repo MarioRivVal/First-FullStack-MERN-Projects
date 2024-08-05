@@ -1,5 +1,6 @@
 import Veterinario from "../models/Veterinario.js";
 import generarJWT from "../helpers/generarJWT.js";
+import generarID from "../helpers/generarID.js";
 
 const registrar = async (req, res) => {
   // Prevenir usuarios duplicados
@@ -22,7 +23,8 @@ const registrar = async (req, res) => {
 };
 // ----------------------------------
 const perfil = (req, res) => {
-  res.json({ msg: "mostrando perfil" });
+  const { veterinario } = req;
+  res.json({ perfil: veterinario });
 };
 
 // ----------------------------------
@@ -70,4 +72,68 @@ const autenticar = async (req, res) => {
   }
 };
 
-export { registrar, perfil, confirmar, autenticar };
+// ----------------------------------
+const olvidePassword = async (req, res) => {
+  const { email } = req.body;
+
+  const existeVeterinario = await Veterinario.findOne({ email });
+  if (!existeVeterinario) {
+    const error = new Error("El usuario no existe");
+    return res.status(400).json({ msg: error.message });
+  }
+
+  try {
+    existeVeterinario.token = generarID();
+    await existeVeterinario.save();
+    res.json({ msg: "Hemos enviado un email con las instrucciones" });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// ----------------------------------
+const comprobarToken = async (req, res) => {
+  const { token } = req.params;
+  const tokenValido = await Veterinario.findOne({ token });
+
+  if (tokenValido) {
+    // El token es valido y el usuario existe
+    res.json({ msg: "Token valido y el usuario existe" });
+  } else {
+    const error = new Error("Token no valido");
+    return res.status(400).json({ msg: error.message });
+  }
+};
+
+// ----------------------------------
+const nuevoPassword = async (req, res) => {
+  const { token } = req.params;
+  const { password } = req.body;
+
+  const veterinario = await Veterinario.findOne({ token });
+
+  if (!veterinario) {
+    const error = new Error("Hubo un error");
+    return res.status(400).json({ msg: error.message });
+  }
+
+  try {
+    veterinario.token = null;
+    veterinario.password = password;
+    await veterinario.save();
+    res.json({ msg: "Password modificado  correctamente" });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+// ----------------------------------
+export {
+  registrar,
+  perfil,
+  confirmar,
+  autenticar,
+  olvidePassword,
+  comprobarToken,
+  nuevoPassword,
+};
