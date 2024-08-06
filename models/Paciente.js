@@ -14,11 +14,12 @@ const pacientesSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    propietario: {
+    fecha: {
       type: Date,
       required: true,
+      default: Date.now(),
     },
-    propietario: {
+    sintomas: {
       type: String,
       required: true,
     },
